@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obfuscate4Share</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="topbar">
+            <div>
+                <h1>Obfuscate4Share</h1>
+                <p class="intro">Local obfuscation of configuration files and technical content, no backend or network calls.</p>
+            </div>
+            <div class="privacy-note">Content stays in your browser.</div>
+        </header>
+
+        <section class="controls-panel">
+            <label class="control-field">
+                <span>Domain to obfuscate</span>
+                <input id="domainInput" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
+            </label>
+
+            <label class="control-field control-field-small">
+                <span>File type</span>
+                <select id="fileTypeSelect">
+                    <option value="auto">auto</option>
+                    <option value="json">json</option>
+                    <option value="yaml">yaml</option>
+                    <option value="ini">ini</option>
+                    <option value="properties">properties</option>
+                    <option value="dotfile">dotfile</option>
+                    <option value="text">text</option>
+                </select>
+                <small id="autoTypeInfo" style="display: none; position: absolute; color: var(--muted); font-size: 0.8rem; margin-top: 4px; bottom: -22px;">Auto-detected: <strong id="activeType">text</strong></small>
+            </label>
+
+            <button id="verifyButton" type="button" class="verify-button">I've verified</button>
+            <button id="copyButton" type="button" class="copy-button" disabled>Copy result</button>
+            <button id="toggleAdvancedButton" type="button" class="toggle-advanced-button">Advanced</button>
+        </section>
+
+        <section class="controls-advanced" id="advancedSection" style="display: none;">
+            <label class="control-field control-field-small">
+                <span>IP range to obfuscate (CIDR)</span>
+                <input id="ipRangeInput" type="text" placeholder="174.239.12.0/24" autocomplete="off" spellcheck="false">
+            </label>
+        </section>
+
+        <section class="editor-grid">
+            <label class="editor-panel">
+                <span>Source</span>
+                <textarea id="sourceInput" placeholder="Paste configuration or technical content here..." spellcheck="false"></textarea>
+            </label>
+
+            <label class="editor-panel">
+                <span>Obfuscated result</span>
+                <textarea id="resultOutput" readonly spellcheck="false"></textarea>
+            </label>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
