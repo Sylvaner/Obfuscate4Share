@@ -70,7 +70,7 @@ Le projet est compatible GitHub Pages (site statique):
 
 URL attendue:
 
-`https://<user>.github.io/<repo>/`
+`https://sylvaner.github.io/Obfuscate4Share/`
 
 ## Evolutions possibles
 

@@ -506,7 +506,7 @@
             return text;
         }
 
-        var cidr = parseCidr(cidrString);
+        var cidr = parseIpFilter(cidrString);
 
         if (!cidr) {
             return text;
@@ -521,84 +521,117 @@
         });
     }
 
+    function parseIpFilter(input) {
+        var value = String(input || "").trim();
+        var ipOnly;
+
+        if (!value) {
+            return null;
+        }
+
+        ipOnly = parseIp(value);
+
+        if (ipOnly) {
+            return {
+                type: "single",
+                ipOctets: ipOnly
+            };
+        }
+
+        return parseCidr(value);
+    }
+
     function parseCidr(cidrString) {
-        var parts = cidrString.split("/");
-        var ip;
+        var match = String(cidrString || "").trim().match(/^(\d{1,3}(?:\.\d{1,3}){3})\s*\/\s*(\d|[12]\d|3[0-2])$/);
+        var ipOctets;
         var prefix;
 
-        if (parts.length !== 2) {
+        if (!match) {
             return null;
         }
 
-        ip = parts[0].trim();
-        prefix = parseInt(parts[1], 10);
+        ipOctets = parseIp(match[1]);
+        prefix = parseInt(match[2], 10);
 
-        if (isNaN(prefix) || prefix < 0 || prefix > 32) {
+        if (!ipOctets) {
             return null;
         }
-
-        var ipInt = ipToInteger(ip);
-
-        if (ipInt === null) {
-            return null;
-        }
-
-        var mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
-        var network = ipInt & mask;
-        var broadcast = network | (~mask >>> 0);
 
         return {
-            network: network,
-            broadcast: broadcast,
+            type: "cidr",
+            networkOctets: ipOctets,
             prefix: prefix,
-            originalIp: ip
+            originalIp: match[1]
         };
     }
 
-    function ipToInteger(ip) {
+    function parseIp(ip) {
         var parts = ip.split(".");
+        var octetText;
+        var octets = [];
 
         if (parts.length !== 4) {
             return null;
         }
 
-        var result = 0;
-
         for (var i = 0; i < 4; i++) {
-            var octet = parseInt(parts[i], 10);
+            octetText = parts[i];
+
+            if (!/^\d{1,3}$/.test(octetText)) {
+                return null;
+            }
+
+            var octet = parseInt(octetText, 10);
 
             if (isNaN(octet) || octet < 0 || octet > 255) {
                 return null;
             }
 
-            result = (result << 8) | octet;
+            octets.push(octet);
         }
 
-        return result >>> 0;
-    }
-
-    function integerToIp(num) {
-        return [
-            (num >>> 24) & 0xff,
-            (num >>> 16) & 0xff,
-            (num >>> 8) & 0xff,
-            num & 0xff
-        ].join(".");
+        return octets;
     }
 
     function ipInRange(ip, cidr) {
-        var ipInt = ipToInteger(ip);
+        var ipOctets = parseIp(ip);
+        var fullBytes;
+        var remainingBits;
+        var mask;
 
-        if (ipInt === null) {
+        if (!ipOctets) {
             return false;
         }
 
-        return ipInt >= cidr.network && ipInt <= cidr.broadcast;
+        if (cidr.type === "single") {
+            return ipOctets.join(".") === cidr.ipOctets.join(".");
+        }
+
+        fullBytes = Math.floor(cidr.prefix / 8);
+        remainingBits = cidr.prefix % 8;
+
+        for (var i = 0; i < fullBytes; i++) {
+            if (ipOctets[i] !== cidr.networkOctets[i]) {
+                return false;
+            }
+        }
+
+        if (remainingBits === 0) {
+            return true;
+        }
+
+        mask = (0xff << (8 - remainingBits)) & 0xff;
+        return (ipOctets[fullBytes] & mask) === (cidr.networkOctets[fullBytes] & mask);
     }
 
     function getObfuscatedIp(ip, cidr) {
-        var ipInt = ipToInteger(ip);
-        var lastOctet = ipInt & 0xff;
+        var ipOctets = parseIp(ip);
+
+        if (!ipOctets) {
+            return ip;
+        }
+
+        var lastOctet = ipOctets[3];
 
         return "1.2.3." + lastOctet;
     }
